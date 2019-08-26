@@ -103,7 +103,12 @@ public class UsnMessageProcessor implements MessageListener {
 	}
 	
 	public void aliveRequest() {
+		log.debug("Alive Request");
 		
+		String macId = "30";
+		
+		UsnOutgoingMessage out = UsnMessageHelper.makeAliveRequest(macId);
+		messageSenderGroup.writeAsync(macId, out);
 	}
 	
 	//@Scheduled(fixedDelay = SENSOR_VALUE_TIME_MILLISECONDS, initialDelay = SENSOR_VALUE_TIME_MILLISECONDS)

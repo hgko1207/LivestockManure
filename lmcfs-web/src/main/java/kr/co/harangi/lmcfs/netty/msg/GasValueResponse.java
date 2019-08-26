@@ -44,7 +44,7 @@ public class GasValueResponse extends AbstractUsnMessage implements UsnIncomingM
 		seq = buffer.readUnsignedByte();
 		nh3 = buffer.readUnsignedByte();
 		h2s = buffer.readUnsignedByte();
-		co2 = buffer.readUnsignedByte();
+		co2 = buffer.readUnsignedShort();
 		o2 = buffer.readUnsignedByte();
 		temp = buffer.readUnsignedShort();
 		hum = buffer.readUnsignedByte();
