@@ -28,6 +28,7 @@ import kr.co.harangi.lmcfs.netty.listener.MessageSender;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnIncomingMessage;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnMessageHeader;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnOutgoingMessage;
+import kr.co.harangi.lmcfs.service.SensorNodeService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,6 +53,9 @@ public class UsnServerHandler extends SimpleChannelInboundHandler<UsnIncomingMes
 	private TaskExecutor executor;
 	
 	@Autowired
+	private SensorNodeService sensorNodeService;
+	
+	@Autowired
 	@Usn
 	@Setter
 	private MessageListener listener;
@@ -66,9 +70,14 @@ public class UsnServerHandler extends SimpleChannelInboundHandler<UsnIncomingMes
 	@Setter
 	private int maxRetryCount = RETRY_COUNT;
 	
+	/**
+	 * 센서 및 구동기 메시지 등록
+	 */
 	@PostConstruct
 	private void init() {
-		messageSenderGroup.addMessageSender("30", this);
+		sensorNodeService.getList().forEach(data -> {
+			messageSenderGroup.addMessageSender(data.getMacId(), this);
+		});
 	}
 	
 	@Override

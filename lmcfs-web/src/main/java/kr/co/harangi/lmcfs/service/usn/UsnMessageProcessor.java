@@ -1,6 +1,7 @@
 package kr.co.harangi.lmcfs.service.usn;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import kr.co.harangi.lmcfs.netty.msg.TempValueResponse;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnIncomingMessage;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnMessageHelper;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnOutgoingMessage;
+import kr.co.harangi.lmcfs.service.SensorNodeService;
 import lombok.extern.slf4j.Slf4j;
 
 @Usn
@@ -22,10 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class UsnMessageProcessor implements MessageListener {
 	
-	private static final int SENSOR_VALUE_TIME_MILLISECONDS = 60 * 1000;
+	private static final int SENSOR_VALUE_TIME_MILLISECONDS = 5000;
 	
 	@Autowired
 	private UsnMessageSenderGroup messageSenderGroup;
+	
+	@Autowired
+	private SensorNodeService sensorNodeService;
 
 	@Override
 	public void connectionStateChanged(boolean isConnected) {
@@ -102,13 +107,15 @@ public class UsnMessageProcessor implements MessageListener {
 		log.debug("BlowerValueReport -> MacId : {}", macId);
 	}
 	
+	@Scheduled(fixedDelay = SENSOR_VALUE_TIME_MILLISECONDS, initialDelay = SENSOR_VALUE_TIME_MILLISECONDS)
 	public void aliveRequest() {
 		log.debug("Alive Request");
 		
-		String macId = "30";
-		
-		UsnOutgoingMessage out = UsnMessageHelper.makeAliveRequest(macId);
-		messageSenderGroup.writeAsync(macId, out);
+		sensorNodeService.getList().forEach(data -> {
+			String macId = data.getMacId();
+			UsnOutgoingMessage out = UsnMessageHelper.makeAliveRequest(macId);
+			messageSenderGroup.writeAsync(macId, out);
+		});
 	}
 	
 	//@Scheduled(fixedDelay = SENSOR_VALUE_TIME_MILLISECONDS, initialDelay = SENSOR_VALUE_TIME_MILLISECONDS)
