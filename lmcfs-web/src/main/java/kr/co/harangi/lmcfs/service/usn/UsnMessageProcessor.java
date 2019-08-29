@@ -1,8 +1,12 @@
 package kr.co.harangi.lmcfs.service.usn;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
+
+import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.TaskScheduler;
@@ -11,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import kr.co.harangi.lmcfs.domain.db.SensorLog;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
+import kr.co.harangi.lmcfs.domain.db.SensorNode.SensorType;
 import kr.co.harangi.lmcfs.netty.annotation.Usn;
 import kr.co.harangi.lmcfs.netty.group.UsnMessageSenderGroup;
 import kr.co.harangi.lmcfs.netty.listener.MessageListener;
@@ -57,32 +62,32 @@ public class UsnMessageProcessor implements MessageListener {
 	public void connectionStateChanged(boolean isConnected) {
 		log.info("isConnected : " + isConnected);
 		
-		if (isConnected) {
-			try {
-				Thread.sleep(DELAY_TIME_MILLISECONDS);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			log.info("Sensor Value Request");
-			
-			ScheduledFuture<?> task = taskScheduler.scheduleAtFixedRate(() -> {
-				sensorNodeService.getList().forEach(data -> {
-					try {
-						Thread.sleep(DELAY_TIME_MILLISECONDS);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					
-					String macId = data.getMacId();
-					log.info("Sensor Value Request : " + macId);
-					UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
-					messageSenderGroup.writeAsync(macId, out);
-				});
-			}, SENSOR_VALUE_TIME_MILLISECONDS); 
-			scheduledTasks.put("sensorValueScheduler", task);
-		} else {
-			scheduledTasks.get("sensorValueScheduler").cancel(true);
-		}
+//		if (isConnected) {
+//			try {
+//				Thread.sleep(DELAY_TIME_MILLISECONDS);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			log.info("Sensor Value Request");
+//			
+//			ScheduledFuture<?> task = taskScheduler.scheduleAtFixedRate(() -> {
+//				sensorNodeService.getList().forEach(data -> {
+//					try {
+//						Thread.sleep(DELAY_TIME_MILLISECONDS);
+//					} catch (Exception e) {
+//						e.printStackTrace();
+//					}
+//					
+//					String macId = data.getMacId();
+//					log.info("Sensor Value Request : " + macId);
+//					UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
+//					messageSenderGroup.writeAsync(macId, out);
+//				});
+//			}, SENSOR_VALUE_TIME_MILLISECONDS); 
+//			scheduledTasks.put("sensorValueScheduler", task);
+//		} else {
+//			scheduledTasks.get("sensorValueScheduler").cancel(true);
+//		}
 	}
 
 	@Override
@@ -161,6 +166,25 @@ public class UsnMessageProcessor implements MessageListener {
 			
 			sensorLogService.regist(sensorLog);
 		}
+	}
+	
+	@PostConstruct
+	private void init() {
+		System.err.println(LocalDate.now());
+		System.err.println(LocalDateTime.now());
+		
+		SensorLog sensorLog = new SensorLog();
+		sensorLog.setMacId("30");
+		sensorLog.setSensorType(SensorType.온도);
+		sensorLog.setTemp(0);
+		sensorLog.setHum(0);
+		sensorLog.setNh3(0);
+		sensorLog.setH2s(0);
+		sensorLog.setCo2(0);
+		sensorLog.setO2(0);
+		sensorLog.setCreateDate(LocalDateTime.now());
+		
+		sensorLogService.regist(sensorLog);
 	}
 
 	private void processAgitatorValueReport(UsnIncomingMessage in) {
