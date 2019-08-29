@@ -58,6 +58,11 @@ public class UsnMessageProcessor implements MessageListener {
 		log.info("isConnected : " + isConnected);
 		
 		if (isConnected) {
+			try {
+				Thread.sleep(DELAY_TIME_MILLISECONDS);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			log.info("Sensor Value Request");
 			
 			ScheduledFuture<?> task = taskScheduler.scheduleAtFixedRate(() -> {
