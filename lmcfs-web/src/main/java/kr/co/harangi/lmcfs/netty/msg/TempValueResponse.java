@@ -22,7 +22,7 @@ public class TempValueResponse extends AbstractUsnMessage implements UsnIncoming
 	private int seq;
 	
 	/** 온도 */
-	private int temp;
+	private float temp;
 	
 	public TempValueResponse(UsnMessageHeader header) {
 		super(header);

@@ -9,6 +9,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import kr.co.harangi.lmcfs.domain.db.SensorLog;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
 import kr.co.harangi.lmcfs.netty.annotation.Usn;
 import kr.co.harangi.lmcfs.netty.group.UsnMessageSenderGroup;
@@ -21,6 +22,7 @@ import kr.co.harangi.lmcfs.netty.msg.TempValueResponse;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnIncomingMessage;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnMessageHelper;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnOutgoingMessage;
+import kr.co.harangi.lmcfs.service.SensorLogService;
 import kr.co.harangi.lmcfs.service.SensorNodeService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,7 +40,13 @@ public class UsnMessageProcessor implements MessageListener {
 	private UsnMessageSenderGroup messageSenderGroup;
 	
 	@Autowired
+	private DeviceService deviceService;
+	
+	@Autowired
 	private SensorNodeService sensorNodeService;
+	
+	@Autowired
+	private SensorLogService sensorLogService;
 	
 	private Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 	
@@ -116,18 +124,39 @@ public class UsnMessageProcessor implements MessageListener {
 		TempValueResponse response = (TempValueResponse) in;
 		String macId = response.getMacId();
 		
-		System.err.println(response);
-		
 		log.info("TempSensorValueResponse -> MacId : {}", macId);
+		
+		SensorNode sensorNode = deviceService.updateTempSensorNodeValue(macId, response);
+		if (sensorNode != null) {
+			SensorLog sensorLog = new SensorLog();
+			sensorLog.setMacId(macId);
+			sensorLog.setSensorType(sensorNode.getSensorType());
+			sensorLog.setTemp(sensorNode.getTemp());
+			
+			sensorLogService.regist(sensorLog);
+		}
 	}
 	
 	private void processGasSensorValueResponse(UsnIncomingMessage in) {
 		GasValueResponse response = (GasValueResponse) in;
 		String macId = response.getMacId();
 		
-		System.err.println(response);
-		
 		log.info("GasSensorValueResponse -> MacId : {}", macId);
+		
+		SensorNode sensorNode = deviceService.updateGasSensorNodeValue(macId, response);
+		if (sensorNode != null) {
+			SensorLog sensorLog = new SensorLog();
+			sensorLog.setMacId(macId);
+			sensorLog.setSensorType(sensorNode.getSensorType());
+			sensorLog.setTemp(sensorNode.getTemp());
+			sensorLog.setHum(sensorNode.getHum());
+			sensorLog.setNh3(sensorNode.getNh3());
+			sensorLog.setH2s(sensorNode.getH2s());
+			sensorLog.setCo2(sensorNode.getCo2());
+			sensorLog.setO2(sensorNode.getO2());
+			
+			sensorLogService.regist(sensorLog);
+		}
 	}
 
 	private void processAgitatorValueReport(UsnIncomingMessage in) {
@@ -155,26 +184,6 @@ public class UsnMessageProcessor implements MessageListener {
 			UsnOutgoingMessage out = UsnMessageHelper.makeAliveRequest(macId);
 			messageSenderGroup.writeAsync(macId, out);
 		});
-	}
-	
-//	@Scheduled(fixedRate = SENSOR_VALUE_TIME_MILLISECONDS, initialDelay = DELAY_TIME_MILLISECONDS)
-	public void sensorValueRequest() {
-		log.info("Sensor Value Request");
-		
-//		if (isConnected) {
-//			sensorNodeService.getList().forEach(data -> {
-//				try {
-//					Thread.sleep(DELAY_TIME_MILLISECONDS);
-//					
-//					String macId = data.getMacId();
-//					log.info("Sensor Value Request : " + macId);
-////					UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
-////					messageSenderGroup.writeAsync(macId, out);
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//			});
-//		}
 	}
 	
 	public void agitatorControlRequest() {

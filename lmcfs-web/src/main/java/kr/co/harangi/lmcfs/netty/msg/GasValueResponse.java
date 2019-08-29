@@ -22,18 +22,18 @@ public class GasValueResponse extends AbstractUsnMessage implements UsnIncomingM
 	private int seq;
 	
 	/** 온도 */
-	private int temp;
+	private float temp;
 	
 	/** 습도 */
-	private int hum;
+	private float hum;
 	
-	private int nh3;
+	private float nh3;
 	
-	private int h2s;
+	private float h2s;
 	
-	private int co2;
+	private float co2;
 	
-	private int o2;
+	private float o2;
 	
 	public GasValueResponse(UsnMessageHeader header) {
 		super(header);

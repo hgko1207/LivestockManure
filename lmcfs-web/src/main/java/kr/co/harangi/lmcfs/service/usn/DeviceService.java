@@ -10,6 +10,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import kr.co.harangi.lmcfs.domain.db.Agitator;
 import kr.co.harangi.lmcfs.domain.db.Blower;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
+import kr.co.harangi.lmcfs.netty.msg.GasValueResponse;
+import kr.co.harangi.lmcfs.netty.msg.TempValueResponse;
 import kr.co.harangi.lmcfs.service.AgitatorService;
 import kr.co.harangi.lmcfs.service.BlowerService;
 import kr.co.harangi.lmcfs.service.SensorNodeService;
@@ -17,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class DeviceAliveChecker {
+public class DeviceService {
 	
 	private static final int ALIVE_CHECK_TIME_MILLISECONDS = 60 * 60 * 1000;
 	
@@ -72,20 +74,47 @@ public class DeviceAliveChecker {
 	}
 
 	/**
-	 * 센서노드의 동작 상태를 활성화로 변경하고, 값을 변경한다.
+	 * 온도 센서노드의 동작 상태를 활성화로 변경하고, 값을 변경한다.
 	 * @param macId
 	 */
-	public boolean updateSensorNodeValue(String macId) {
+	public SensorNode updateTempSensorNodeValue(String macId, TempValueResponse result) {
 		SensorNode sensorNode = sensorNodeService.get(macId);
 		if (sensorNode == null) {
 			log.warn("sensorNode {} not found", macId);
-			return false;
+			return null;
 		}
+		
+		sensorNode.setTemp(result.getTemp());
 		
 		if (sensorNode.setActive()) {
 			log.info("sensorNode {} is active", macId);
 		}
 		
-		return true;
+		return sensorNode;
+	}
+	
+	/**
+	 * 가스 센서노드의 동작 상태를 활성화로 변경하고, 값을 변경한다.
+	 * @param macId
+	 */
+	public SensorNode updateGasSensorNodeValue(String macId, GasValueResponse result) {
+		SensorNode sensorNode = sensorNodeService.get(macId);
+		if (sensorNode == null) {
+			log.warn("sensorNode {} not found", macId);
+			return null;
+		}
+		
+		sensorNode.setTemp(result.getTemp());
+		sensorNode.setHum(result.getHum());
+		sensorNode.setNh3(result.getNh3());
+		sensorNode.setH2s(result.getH2s());
+		sensorNode.setCo2(result.getCo2());
+		sensorNode.setO2(result.getO2());
+		
+		if (sensorNode.setActive()) {
+			log.info("sensorNode {} is active", macId);
+		}
+		
+		return sensorNode;
 	}
 }
