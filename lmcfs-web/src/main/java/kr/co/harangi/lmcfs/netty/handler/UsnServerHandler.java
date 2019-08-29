@@ -145,8 +145,8 @@ public class UsnServerHandler extends SimpleChannelInboundHandler<UsnIncomingMes
 	}
 
 	 /**
-     * 응답이 요구 되는 메시지의 경우 BlockingQueue를 사용하여, 
-     * 응답메시지가 오기를 기다린후 응답시간 10000 msec 이 초과했을때 실패로 간주한다.
+	  * 응답이 요구 되는 메시지의 경우 BlockingQueue를 사용하여, 
+	  * 응답메시지가 오기를 기다린후 응답시간 10000 msec 이 초과했을때 실패로 간주한다.
      * - 응답 메시지는 요청 메시지와 메시지 아이디가 같다.
      * - ACK가 오지 않을 경우 3회 재전송
      */

@@ -1,16 +1,22 @@
 package kr.co.harangi.lmcfs.service.usn;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import kr.co.harangi.lmcfs.domain.db.SensorNode;
 import kr.co.harangi.lmcfs.netty.annotation.Usn;
 import kr.co.harangi.lmcfs.netty.group.UsnMessageSenderGroup;
 import kr.co.harangi.lmcfs.netty.listener.MessageListener;
 import kr.co.harangi.lmcfs.netty.msg.AgitatorValueReport;
 import kr.co.harangi.lmcfs.netty.msg.AliveResponse;
 import kr.co.harangi.lmcfs.netty.msg.BlowerValueReport;
+import kr.co.harangi.lmcfs.netty.msg.GasValueResponse;
 import kr.co.harangi.lmcfs.netty.msg.TempValueResponse;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnIncomingMessage;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnMessageHelper;
@@ -24,16 +30,47 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class UsnMessageProcessor implements MessageListener {
 	
-	private static final int SENSOR_VALUE_TIME_MILLISECONDS = 5000;
+	private static final int ALIVE_TIME_MILLISECONDS = 30 * 1000;
+	private static final int SENSOR_VALUE_TIME_MILLISECONDS = 60 * 1000;
+	private static final int DELAY_TIME_MILLISECONDS = 2 * 1000;
 	
 	@Autowired
 	private UsnMessageSenderGroup messageSenderGroup;
 	
 	@Autowired
 	private SensorNodeService sensorNodeService;
+	
+	private Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+	
+	@Autowired
+	private TaskScheduler taskScheduler;
 
 	@Override
 	public void connectionStateChanged(boolean isConnected) {
+		log.info("isConnected : " + isConnected);
+		
+		if (isConnected) {
+			log.info("Sensor Value Request");
+			
+			ScheduledFuture<?> task = taskScheduler.scheduleAtFixedRate(() -> {
+				sensorNodeService.getList().forEach(data -> {
+					try {
+						Thread.sleep(DELAY_TIME_MILLISECONDS);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					String macId = data.getMacId();
+					log.info("Sensor Value Request : " + macId);
+					UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
+					messageSenderGroup.writeAsync(macId, out);
+				});
+				
+			}, SENSOR_VALUE_TIME_MILLISECONDS); 
+			scheduledTasks.put("sensorValueScheduler", task);
+		} else {
+			scheduledTasks.get("sensorValueScheduler").cancel(true);
+		}
 	}
 
 	@Override
@@ -69,8 +106,10 @@ public class UsnMessageProcessor implements MessageListener {
 		AliveResponse response = (AliveResponse) in;
 		
 		String macId = response.getMacId();
+		SensorNode sensorNode = sensorNodeService.get(macId);
+		sensorNode.setActive();
 		
-		log.debug("AliveResponse -> MacId : {}", macId);
+		log.info("AliveResponse -> MacId : {}", macId);
 	}
 
 	private void processTempSensorValueResponse(UsnIncomingMessage in) {
@@ -79,16 +118,16 @@ public class UsnMessageProcessor implements MessageListener {
 		
 		System.err.println(response);
 		
-		log.debug("TempSensorValueResponse -> MacId : {}", macId);
+		log.info("TempSensorValueResponse -> MacId : {}", macId);
 	}
 	
 	private void processGasSensorValueResponse(UsnIncomingMessage in) {
-		TempValueResponse response = (TempValueResponse) in;
+		GasValueResponse response = (GasValueResponse) in;
 		String macId = response.getMacId();
 		
 		System.err.println(response);
 		
-		log.debug("TempSensorValueResponse -> MacId : {}", macId);
+		log.info("GasSensorValueResponse -> MacId : {}", macId);
 	}
 
 	private void processAgitatorValueReport(UsnIncomingMessage in) {
@@ -96,7 +135,7 @@ public class UsnMessageProcessor implements MessageListener {
 		
 		String macId = report.getMacId();
 		
-		log.debug("AgitatorValueReport -> MacId : {}", macId);
+		log.info("AgitatorValueReport -> MacId : {}", macId);
 	}
 	
 	private void processBlowerValueReport(UsnIncomingMessage in) {
@@ -104,12 +143,12 @@ public class UsnMessageProcessor implements MessageListener {
 		
 		String macId = report.getMacId();
 		
-		log.debug("BlowerValueReport -> MacId : {}", macId);
+		log.info("BlowerValueReport -> MacId : {}", macId);
 	}
 	
-	@Scheduled(fixedDelay = SENSOR_VALUE_TIME_MILLISECONDS, initialDelay = SENSOR_VALUE_TIME_MILLISECONDS)
+	//@Scheduled(fixedDelay = ALIVE_TIME_MILLISECONDS, initialDelay = ALIVE_TIME_MILLISECONDS)
 	public void aliveRequest() {
-		log.debug("Alive Request");
+		log.info("Alive Request");
 		
 		sensorNodeService.getList().forEach(data -> {
 			String macId = data.getMacId();
@@ -118,18 +157,28 @@ public class UsnMessageProcessor implements MessageListener {
 		});
 	}
 	
-	//@Scheduled(fixedDelay = SENSOR_VALUE_TIME_MILLISECONDS, initialDelay = SENSOR_VALUE_TIME_MILLISECONDS)
+//	@Scheduled(fixedRate = SENSOR_VALUE_TIME_MILLISECONDS, initialDelay = DELAY_TIME_MILLISECONDS)
 	public void sensorValueRequest() {
-		log.debug("Sensor Value Request");
+		log.info("Sensor Value Request");
 		
-		String macId = "30";
-		
-		UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
-		messageSenderGroup.writeAsync(macId, out);
+//		if (isConnected) {
+//			sensorNodeService.getList().forEach(data -> {
+//				try {
+//					Thread.sleep(DELAY_TIME_MILLISECONDS);
+//					
+//					String macId = data.getMacId();
+//					log.info("Sensor Value Request : " + macId);
+////					UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
+////					messageSenderGroup.writeAsync(macId, out);
+//				} catch (Exception e) {
+//					e.printStackTrace();
+//				}
+//			});
+//		}
 	}
 	
 	public void agitatorControlRequest() {
-		log.debug("Agitator Control Request");
+		log.info("Agitator Control Request");
 		
 		String macId = "30";
 		int onControl = 0x01;
