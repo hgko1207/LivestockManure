@@ -84,7 +84,7 @@ public class DeviceService {
 			return null;
 		}
 		
-		sensorNode.setTemp(result.getTemp());
+		sensorNode.setTemp(result.getTemp() / 100);
 		
 		if (sensorNode.setActive()) {
 			log.info("sensorNode {} is active", macId);
@@ -104,7 +104,7 @@ public class DeviceService {
 			return null;
 		}
 		
-		sensorNode.setTemp(result.getTemp());
+		sensorNode.setTemp(result.getTemp() / 100);
 		sensorNode.setHum(result.getHum());
 		sensorNode.setNh3(result.getNh3());
 		sensorNode.setH2s(result.getH2s());
