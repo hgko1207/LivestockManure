@@ -1,7 +1,5 @@
 package kr.co.harangi.lmcfs.service.usn;
 
-import java.util.Date;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -36,7 +34,7 @@ public class DeviceService {
 	
 	@Autowired
 	private TransactionTemplate txTemplate;
-
+	
 	@Scheduled(fixedDelay = ALIVE_CHECK_TIME_MILLISECONDS, initialDelay = ALIVE_CHECK_TIME_MILLISECONDS)
 	public void deviceAliveCheck() {
 		txTemplate.execute(new TransactionCallbackWithoutResult() {

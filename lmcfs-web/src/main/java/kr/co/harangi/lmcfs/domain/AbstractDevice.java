@@ -1,6 +1,7 @@
 package kr.co.harangi.lmcfs.domain;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 import javax.persistence.Column;
@@ -55,7 +56,7 @@ public abstract class AbstractDevice implements Domain {
 	 */
 	public boolean setInactiveIfTimeout() {
 		if (alive && updateDate != null) {
-			if (System.currentTimeMillis() - updateDate.atZone(ZoneOffset.UTC).toInstant().toEpochMilli() >= ALIVE_TIMEOUT_MILLISECONDS) {
+			if (System.currentTimeMillis() - updateDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() >= ALIVE_TIMEOUT_MILLISECONDS) {
 				alive = false;
 				return true;
 			}
