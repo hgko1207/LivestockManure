@@ -50,6 +50,7 @@ public abstract class AbstractDevice implements Domain {
 	
 	private void updateLastPresenceTime() {
 		lastPresenceTime = new Date();
+		System.err.println(lastPresenceTime);
 	}
 	
 	public boolean setActive() {

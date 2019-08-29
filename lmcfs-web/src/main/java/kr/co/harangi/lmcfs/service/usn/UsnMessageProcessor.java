@@ -78,7 +78,6 @@ public class UsnMessageProcessor implements MessageListener {
 					UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
 					messageSenderGroup.writeAsync(macId, out);
 				});
-				
 			}, SENSOR_VALUE_TIME_MILLISECONDS); 
 			scheduledTasks.put("sensorValueScheduler", task);
 		} else {

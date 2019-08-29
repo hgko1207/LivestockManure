@@ -1,5 +1,7 @@
 package kr.co.harangi.lmcfs.service.usn;
 
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -84,7 +86,16 @@ public class DeviceService {
 			return null;
 		}
 		
-		sensorNode.setTemp(result.getTemp() / 100);
+//		float temp = 0f;
+//		String tempStr = String.valueOf(result.getTemp());
+//		System.err.println(tempStr);
+//		if (tempStr.length() == 4) {
+//			temp = result.getTemp() / 100;
+//		} else {
+//			temp = result.getTemp();
+//		}
+		
+		sensorNode.setTemp(result.getTemp());
 		
 		if (sensorNode.setActive()) {
 			log.info("sensorNode {} is active", macId);
