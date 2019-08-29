@@ -1,15 +1,16 @@
 package kr.co.harangi.lmcfs.domain;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.PrePersist;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import lombok.Data;
 
@@ -35,25 +36,13 @@ public abstract class AbstractDevice implements Domain {
 	/** 동작 상태 - 이상/정상 */
 	private boolean alive;
 	
-	@Column(nullable = false)
-	@Temporal(TemporalType.TIMESTAMP)
-	private Date createDate;
+	@CreationTimestamp
+	private LocalDateTime createDate;
 	
-	@Column
-	@Temporal(TemporalType.TIMESTAMP)
-	private Date lastPresenceTime;
-	
-	@PrePersist
-	public void prePersist() {
-		createDate = new Date();
-	}
-	
-	private void updateLastPresenceTime() {
-		lastPresenceTime = new Date();
-	}
+	@UpdateTimestamp
+	private LocalDateTime updateDate;
 	
 	public boolean setActive() {
-		updateLastPresenceTime();
 		if (!alive) {
 			alive = true;
 			return true;
@@ -65,8 +54,8 @@ public abstract class AbstractDevice implements Domain {
 	 * @return 상태 변화 여부
 	 */
 	public boolean setInactiveIfTimeout() {
-		if (alive && lastPresenceTime != null) {
-			if (System.currentTimeMillis() - lastPresenceTime.getTime() >= ALIVE_TIMEOUT_MILLISECONDS) {
+		if (alive && updateDate != null) {
+			if (System.currentTimeMillis() - updateDate.atZone(ZoneOffset.UTC).toInstant().toEpochMilli() >= ALIVE_TIMEOUT_MILLISECONDS) {
 				alive = false;
 				return true;
 			}
