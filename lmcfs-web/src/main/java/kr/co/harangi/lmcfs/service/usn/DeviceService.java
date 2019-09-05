@@ -10,6 +10,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import kr.co.harangi.lmcfs.domain.db.Agitator;
 import kr.co.harangi.lmcfs.domain.db.Blower;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
+import kr.co.harangi.lmcfs.netty.msg.AgitatorValueReport;
 import kr.co.harangi.lmcfs.netty.msg.GasValueResponse;
 import kr.co.harangi.lmcfs.netty.msg.TempValueResponse;
 import kr.co.harangi.lmcfs.service.AgitatorService;
@@ -125,5 +126,21 @@ public class DeviceService {
 		}
 		
 		return sensorNode;
+	}
+	
+	public Agitator updateAgitatorValue(String macId, AgitatorValueReport report) {
+		Agitator agitator = agitatorService.get(macId);
+		if (agitator == null) {
+			log.warn("agitator {} not found", macId);
+			return null;
+		}
+		
+		agitator.setStatus(report.getStatus() == 0? false : true);
+		
+		if (agitator.setActive()) {
+			log.info("agitator {} is active", macId);
+		}
+		
+		return agitator;
 	}
 }

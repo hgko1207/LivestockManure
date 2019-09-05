@@ -8,4 +8,6 @@ public interface AgitatorRepository extends DefaultRepository<Agitator, Integer>
 
 	List<Agitator> findByAlive(boolean alive);
 
+	Agitator findByMacId(String macId);
+
 }

@@ -2,7 +2,6 @@ package kr.co.harangi.lmcfs.domain;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
@@ -44,6 +43,7 @@ public abstract class AbstractDevice implements Domain {
 	private LocalDateTime updateDate;
 	
 	public boolean setActive() {
+		updateDate = LocalDateTime.now();
 		if (!alive) {
 			alive = true;
 			return true;

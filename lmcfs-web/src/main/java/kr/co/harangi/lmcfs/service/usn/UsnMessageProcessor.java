@@ -1,21 +1,18 @@
 package kr.co.harangi.lmcfs.service.usn;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
-
-import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import kr.co.harangi.lmcfs.domain.db.Agitator;
+import kr.co.harangi.lmcfs.domain.db.AgitatorLog;
 import kr.co.harangi.lmcfs.domain.db.SensorLog;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
-import kr.co.harangi.lmcfs.domain.db.SensorNode.SensorType;
 import kr.co.harangi.lmcfs.netty.annotation.Usn;
 import kr.co.harangi.lmcfs.netty.group.UsnMessageSenderGroup;
 import kr.co.harangi.lmcfs.netty.listener.MessageListener;
@@ -27,6 +24,7 @@ import kr.co.harangi.lmcfs.netty.msg.TempValueResponse;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnIncomingMessage;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnMessageHelper;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnOutgoingMessage;
+import kr.co.harangi.lmcfs.service.AgitatorLogService;
 import kr.co.harangi.lmcfs.service.SensorLogService;
 import kr.co.harangi.lmcfs.service.SensorNodeService;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +50,9 @@ public class UsnMessageProcessor implements MessageListener {
 	
 	@Autowired
 	private SensorLogService sensorLogService;
+	
+	@Autowired
+	private AgitatorLogService agitatorLogService;
 	
 	private Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 	
@@ -170,10 +171,18 @@ public class UsnMessageProcessor implements MessageListener {
 
 	private void processAgitatorValueReport(UsnIncomingMessage in) {
 		AgitatorValueReport report = (AgitatorValueReport) in;
-		
 		String macId = report.getMacId();
 		
 		log.info("AgitatorValueReport -> MacId : {}", macId);
+		
+		Agitator agitator = deviceService.updateAgitatorValue(macId, report);
+		if (agitator != null) {
+			AgitatorLog agitatorLog = new AgitatorLog();
+			agitatorLog.setMacId(macId);
+			agitatorLog.setStatus(agitator.isStatus());
+			
+			agitatorLogService.regist(agitatorLog);
+		}
 	}
 	
 	private void processBlowerValueReport(UsnIncomingMessage in) {

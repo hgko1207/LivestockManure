@@ -61,4 +61,9 @@ public class AgitatorServiceImpl implements AgitatorService {
 		return agitatorRepository.findByAlive(alive);
 	}
 
+	@Override
+	public Agitator get(String macId) {
+		return agitatorRepository.findByMacId(macId);
+	}
+
 }

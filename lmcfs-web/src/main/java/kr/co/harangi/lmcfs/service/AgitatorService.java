@@ -8,4 +8,6 @@ public interface AgitatorService extends CRUDService<Agitator, Integer> {
 
 	List<Agitator> getList(boolean alive);
 
+	Agitator get(String macId);
+
 }
