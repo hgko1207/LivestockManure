@@ -1,5 +1,6 @@
 package kr.co.harangi.lmcfs.service.usn;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
@@ -11,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import kr.co.harangi.lmcfs.domain.db.Agitator;
 import kr.co.harangi.lmcfs.domain.db.AgitatorLog;
+import kr.co.harangi.lmcfs.domain.db.Blower;
+import kr.co.harangi.lmcfs.domain.db.BlowerLog;
 import kr.co.harangi.lmcfs.domain.db.SensorLog;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
 import kr.co.harangi.lmcfs.netty.annotation.Usn;
@@ -25,6 +28,7 @@ import kr.co.harangi.lmcfs.netty.msg.common.UsnIncomingMessage;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnMessageHelper;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnOutgoingMessage;
 import kr.co.harangi.lmcfs.service.AgitatorLogService;
+import kr.co.harangi.lmcfs.service.BlowerLogService;
 import kr.co.harangi.lmcfs.service.SensorLogService;
 import kr.co.harangi.lmcfs.service.SensorNodeService;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UsnMessageProcessor implements MessageListener {
 	
 	private static final int ALIVE_TIME_MILLISECONDS = 30 * 1000;
-	private static final int SENSOR_VALUE_TIME_MILLISECONDS = 60 * 1000;
+	private static final int SENSOR_VALUE_TIME_MILLISECONDS = 5 * 60 * 1000;
 	private static final int DELAY_TIME_MILLISECONDS = 2 * 1000;
 	
 	@Autowired
@@ -53,6 +57,9 @@ public class UsnMessageProcessor implements MessageListener {
 	
 	@Autowired
 	private AgitatorLogService agitatorLogService;
+	
+	@Autowired
+	private BlowerLogService blowerLogService;
 	
 	private Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 	
@@ -88,6 +95,7 @@ public class UsnMessageProcessor implements MessageListener {
 			scheduledTasks.put("sensorValueScheduler", task);
 		} else {
 			scheduledTasks.get("sensorValueScheduler").cancel(true);
+			scheduledTasks.remove("sensorValueScheduler");
 		}
 	}
 
@@ -143,7 +151,9 @@ public class UsnMessageProcessor implements MessageListener {
 			sensorLog.setSensorType(sensorNode.getSensorType());
 			sensorLog.setTemp(sensorNode.getTemp());
 			
-			sensorLogService.regist(sensorLog);
+			if (sensorLogService.get(macId, LocalDateTime.now()) == null) {
+				sensorLogService.regist(sensorLog);
+			}
 		}
 	}
 	
@@ -165,7 +175,9 @@ public class UsnMessageProcessor implements MessageListener {
 			sensorLog.setCo2(sensorNode.getCo2());
 			sensorLog.setO2(sensorNode.getO2());
 			
-			sensorLogService.regist(sensorLog);
+			if (sensorLogService.get(macId, LocalDateTime.now()) == null) {
+				sensorLogService.regist(sensorLog);
+			}
 		}
 	}
 
@@ -187,10 +199,21 @@ public class UsnMessageProcessor implements MessageListener {
 	
 	private void processBlowerValueReport(UsnIncomingMessage in) {
 		BlowerValueReport report = (BlowerValueReport) in;
-		
 		String macId = report.getMacId();
 		
 		log.info("BlowerValueReport -> MacId : {}", macId);
+		
+		Blower blower = deviceService.updateBlowerValue(macId, report);
+		if (blower != null) {
+			BlowerLog blowerLog = new BlowerLog();
+			blowerLog.setMacId(macId);
+			blowerLog.setBtn1Status(blower.isBtn1Status());
+			blowerLog.setBtn2Status(blower.isBtn2Status());
+			blowerLog.setBtn3Status(blower.isBtn3Status());
+			blowerLog.setBtn4Status(blower.isBtn4Status());
+			
+			blowerLogService.regist(blowerLog);
+		}
 	}
 	
 	//@Scheduled(fixedDelay = ALIVE_TIME_MILLISECONDS, initialDelay = ALIVE_TIME_MILLISECONDS)

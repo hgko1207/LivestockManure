@@ -11,6 +11,7 @@ import kr.co.harangi.lmcfs.domain.db.Agitator;
 import kr.co.harangi.lmcfs.domain.db.Blower;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
 import kr.co.harangi.lmcfs.netty.msg.AgitatorValueReport;
+import kr.co.harangi.lmcfs.netty.msg.BlowerValueReport;
 import kr.co.harangi.lmcfs.netty.msg.GasValueResponse;
 import kr.co.harangi.lmcfs.netty.msg.TempValueResponse;
 import kr.co.harangi.lmcfs.service.AgitatorService;
@@ -142,5 +143,24 @@ public class DeviceService {
 		}
 		
 		return agitator;
+	}
+	
+	public Blower updateBlowerValue(String macId, BlowerValueReport report) {
+		Blower blower = blowerService.get(macId);
+		if (blower == null) {
+			log.warn("blower {} not found", macId);
+			return null;
+		}
+		
+		blower.setBtn1Status(report.getBtn1Status() == 0? false : true);
+		blower.setBtn2Status(report.getBtn2Status() == 0? false : true);
+		blower.setBtn3Status(report.getBtn3Status() == 0? false : true);
+		blower.setBtn4Status(report.getBtn4Status() == 0? false : true);
+		
+		if (blower.setActive()) {
+			log.info("blower {} is active", macId);
+		}
+		
+		return blower;
 	}
 }

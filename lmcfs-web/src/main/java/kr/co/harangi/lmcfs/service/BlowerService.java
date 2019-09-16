@@ -8,4 +8,6 @@ public interface BlowerService extends CRUDService<Blower, Integer> {
 
 	List<Blower> getList(boolean alive);
 
+	Blower get(String macId);
+
 }

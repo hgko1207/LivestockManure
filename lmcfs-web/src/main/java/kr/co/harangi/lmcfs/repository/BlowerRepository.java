@@ -8,4 +8,6 @@ public interface BlowerRepository extends DefaultRepository<Blower, Integer> {
 
 	List<Blower> findByAlive(boolean alive);
 
+	Blower findByMacId(String macId);
+
 }

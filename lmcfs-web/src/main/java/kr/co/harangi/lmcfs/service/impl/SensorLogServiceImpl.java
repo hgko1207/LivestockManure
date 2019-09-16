@@ -1,5 +1,6 @@
 package kr.co.harangi.lmcfs.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,5 +55,10 @@ public class SensorLogServiceImpl implements SensorLogService {
 
 	private boolean isNew(SensorLog domain) {
 		return !sensorLogRepository.existsById(domain.getId());
+	}
+
+	@Override
+	public SensorLog get(String macId, LocalDateTime createDate) {
+		return sensorLogRepository.findByMacIdAndCreateDate(macId, createDate);
 	}
 }

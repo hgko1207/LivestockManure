@@ -61,4 +61,9 @@ public class BlowerServiceImpl implements BlowerService {
 		return blowerRepository.findByAlive(alive);
 	}
 
+	@Override
+	public Blower get(String macId) {
+		return blowerRepository.findByMacId(macId);
+	}
+
 }
