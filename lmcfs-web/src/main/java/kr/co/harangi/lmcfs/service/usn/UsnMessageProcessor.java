@@ -14,6 +14,8 @@ import kr.co.harangi.lmcfs.domain.db.Agitator;
 import kr.co.harangi.lmcfs.domain.db.AgitatorLog;
 import kr.co.harangi.lmcfs.domain.db.Blower;
 import kr.co.harangi.lmcfs.domain.db.BlowerLog;
+import kr.co.harangi.lmcfs.domain.db.GatewayLog;
+import kr.co.harangi.lmcfs.domain.db.GatewayLog.ConnectionStatus;
 import kr.co.harangi.lmcfs.domain.db.SensorLog;
 import kr.co.harangi.lmcfs.domain.db.SensorNode;
 import kr.co.harangi.lmcfs.netty.annotation.Usn;
@@ -29,6 +31,7 @@ import kr.co.harangi.lmcfs.netty.msg.common.UsnMessageHelper;
 import kr.co.harangi.lmcfs.netty.msg.common.UsnOutgoingMessage;
 import kr.co.harangi.lmcfs.service.AgitatorLogService;
 import kr.co.harangi.lmcfs.service.BlowerLogService;
+import kr.co.harangi.lmcfs.service.GatewayLogService;
 import kr.co.harangi.lmcfs.service.SensorLogService;
 import kr.co.harangi.lmcfs.service.SensorNodeService;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +64,9 @@ public class UsnMessageProcessor implements MessageListener {
 	@Autowired
 	private BlowerLogService blowerLogService;
 	
+	@Autowired
+	private GatewayLogService gatewayLogService;
+	
 	private Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 	
 	@Autowired
@@ -78,6 +84,11 @@ public class UsnMessageProcessor implements MessageListener {
 			}
 			log.info("Sensor Value Request");
 			
+			if (scheduledTasks.get("sensorValueScheduler") != null) {
+				scheduledTasks.get("sensorValueScheduler").cancel(true);
+				scheduledTasks.remove("sensorValueScheduler");
+			}
+			
 			ScheduledFuture<?> task = taskScheduler.scheduleAtFixedRate(() -> {
 				sensorNodeService.getList().forEach(data -> {
 					try {
@@ -91,11 +102,15 @@ public class UsnMessageProcessor implements MessageListener {
 					UsnOutgoingMessage out = UsnMessageHelper.makeSensorValueRequest(macId);
 					messageSenderGroup.writeAsync(macId, out);
 				});
-			}, SENSOR_VALUE_TIME_MILLISECONDS); 
+			}, SENSOR_VALUE_TIME_MILLISECONDS);
 			scheduledTasks.put("sensorValueScheduler", task);
+			
+			gatewayLogService.regist(new GatewayLog(ConnectionStatus.ON));
 		} else {
 			scheduledTasks.get("sensorValueScheduler").cancel(true);
 			scheduledTasks.remove("sensorValueScheduler");
+			
+			gatewayLogService.regist(new GatewayLog(ConnectionStatus.OFF));
 		}
 	}
 

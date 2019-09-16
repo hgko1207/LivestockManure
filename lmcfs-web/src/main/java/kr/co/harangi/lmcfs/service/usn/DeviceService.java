@@ -86,15 +86,6 @@ public class DeviceService {
 			return null;
 		}
 		
-//		float temp = 0f;
-//		String tempStr = String.valueOf(result.getTemp());
-//		System.err.println(tempStr);
-//		if (tempStr.length() == 4) {
-//			temp = result.getTemp() / 100;
-//		} else {
-//			temp = result.getTemp();
-//		}
-		
 		sensorNode.setTemp(result.getTemp());
 		
 		if (sensorNode.setActive()) {
@@ -115,18 +106,42 @@ public class DeviceService {
 			return null;
 		}
 		
+		sensorNode.setCo2(result.getCo2());
 		sensorNode.setTemp(result.getTemp() / 100);
 		sensorNode.setHum(result.getHum());
-		sensorNode.setNh3(result.getNh3());
-		sensorNode.setH2s(result.getH2s());
-		sensorNode.setCo2(result.getCo2());
-		sensorNode.setO2(result.getO2());
+		
+		float o2 = result.getO2() / 100;
+		o2 = o2 - 0.176f;
+		if (o2 <= 0) {
+			o2 = 0;
+		} else {
+			o2 = (20.9f - o2) * 193.5186f;
+		}
+		sensorNode.setO2(round(o2));
+		sensorNode.setNh3(round(nh3AndH2s(result.getNh3())));
+		sensorNode.setH2s(round(nh3AndH2s(result.getH2s())));
 		
 		if (sensorNode.setActive()) {
 			log.info("sensorNode {} is active", macId);
 		}
 		
 		return sensorNode;
+	}
+	
+	private float nh3AndH2s(float value) {
+		float result = value / 100;
+		result = result - 0.5f;
+		if (result <= 0) {
+			result = 0;
+		} else {
+			result = result / 0.012f;
+		}
+		
+		return result;
+	}
+	
+	private float round(float value) {
+		return Math.round(value * 1000) / 1000.0f;
 	}
 	
 	public Agitator updateAgitatorValue(String macId, AgitatorValueReport report) {
