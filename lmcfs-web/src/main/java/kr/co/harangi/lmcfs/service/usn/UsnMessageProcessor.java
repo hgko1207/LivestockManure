@@ -189,6 +189,9 @@ public class UsnMessageProcessor implements MessageListener {
 			sensorLog.setH2s(sensorNode.getH2s());
 			sensorLog.setCo2(sensorNode.getCo2());
 			sensorLog.setO2(sensorNode.getO2());
+			sensorLog.setOriginalO2(sensorNode.getO2());
+			sensorLog.setOriginalNh3(sensorNode.getNh3());
+			sensorLog.setOriginalH2s(sensorNode.getH2s());
 			
 			if (sensorLogService.get(macId, LocalDateTime.now()) == null) {
 				sensorLogService.regist(sensorLog);

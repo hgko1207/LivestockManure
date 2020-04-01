@@ -41,6 +41,12 @@ public class SensorNode extends AbstractDevice {
 	
 	private float o2;
 	
+	private float originalH2s;
+	
+	private float originalNh3;
+	
+	private float originalO2;
+	
 	public enum SensorType {
 		온도, 가스
 	}

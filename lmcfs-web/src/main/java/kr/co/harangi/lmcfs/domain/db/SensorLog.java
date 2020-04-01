@@ -41,4 +41,10 @@ public class SensorLog extends AbstractLogDomain {
 	private float co2;
 	
 	private float o2;
+	
+	private float originalH2s;
+	
+	private float originalNh3;
+	
+	private float originalO2;
 }

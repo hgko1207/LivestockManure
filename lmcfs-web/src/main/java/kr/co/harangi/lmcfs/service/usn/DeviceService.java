@@ -109,6 +109,9 @@ public class DeviceService {
 		sensorNode.setCo2(result.getCo2());
 		sensorNode.setTemp(result.getTemp() / 100);
 		sensorNode.setHum(result.getHum());
+		sensorNode.setOriginalO2(result.getO2());
+		sensorNode.setOriginalNh3(result.getNh3());
+		sensorNode.setOriginalH2s(result.getH2s());
 		
 		float o2 = result.getO2() / 100;
 		o2 = o2 - 0.176f;
