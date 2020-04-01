@@ -41,10 +41,13 @@ public class SensorNode extends AbstractDevice {
 	
 	private float o2;
 	
+	@Column(name = "original_h2s")
 	private float originalH2s;
 	
+	@Column(name = "original_nh3")
 	private float originalNh3;
 	
+	@Column(name = "original_o2")
 	private float originalO2;
 	
 	public enum SensorType {
